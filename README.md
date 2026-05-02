@@ -20,8 +20,6 @@
 - [Flows](#flows)
 - [External Integrations](#external-integrations)
 - [Future Roadmap](#future-roadmap)
-- [Salesforce Features Used](#salesforce-features-used)
-- [Demo](#demo)
 
 ---
 
