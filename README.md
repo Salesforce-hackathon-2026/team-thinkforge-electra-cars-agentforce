@@ -19,7 +19,7 @@
 - [Key Apex Classes](#key-apex-classes)
 - [Flows](#flows)
 - [External Integrations](#external-integrations)
-- [Potential Improvements](#potential-improvements)
+- [Future Roadmap](#future-roadmap)
 - [Salesforce Features Used](#salesforce-features-used)
 - [Demo](#demo)
 
@@ -381,7 +381,7 @@ https://api.open-meteo.com/v1/forecast
 
 ---
 
-## 🚀 Potential Improvements
+## 🚀 Future Roadmap
 
 - Leveraging Agentforce Voice for booking test drives with a natural phonic conversation
 - WhatsApp channel alignment directly from Salesforce without depending on third-party applications such as Twilio
