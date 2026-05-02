@@ -1,0 +1,176 @@
+:host {
+    --electra-black: #000000;
+    --electra-gray: #F0F0F0;
+    --text-muted: #888;
+}
+
+.showroom-container {
+    width: 100%;
+    background: #fff;
+}
+
+/* Layout Constraints */
+.content-limit {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.top-nav {
+    padding: 30px 0 0 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.back-link {
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    transition: color 0.3s ease;
+}
+
+.back-link:hover {
+    color: var(--electra-black);
+}
+
+/* Hero Section */
+.hero-row {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: center;
+    gap: 60px;
+    padding-top: 30px;
+    padding: 60px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.model-title {
+    font-size: 4.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    line-height: 0.9;
+    margin-bottom: 20px;
+}
+
+.pricing-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 40px;
+}
+
+/* Full Width Features */
+.full-width-section {
+    padding: 100px 0;
+    width: 100%;
+}
+
+.bg-gray {
+    background-color: var(--electra-gray);
+}
+
+.features-grid {
+    column-count: 2; /* Automatically splits your bullets into two columns */
+    column-gap: 60px;
+}
+
+/* Parallel Detail Rows */
+.detail-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    padding: 80px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.detail-text {
+    padding-right: 40px;
+}
+
+/* Shared Components */
+.section-label {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    font-weight: 800;
+    color: var(--text-muted);
+    margin-bottom: 25px;
+}
+
+.img-frame, .hero-image-frame {
+    overflow: hidden;
+    background: var(--electra-gray);
+}
+
+.zoom-img {
+    width: 100%;
+    display: block;
+    transition: transform 1.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.img-frame:hover .zoom-img, 
+.hero-image-frame:hover .zoom-img {
+    transform: scale(1.05);
+}
+
+.btn-primary-black {
+    background: var(--electra-black);
+    color: #fff;
+    padding: 20px 50px;
+    border: none;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-black:hover {
+    letter-spacing: 3px;
+    background: #333;
+}
+
+/* Optimized Mobile Responsiveness */
+@media (max-width: 1024px) {
+    /* 1. Reset Top Nav padding to center the back link */
+    .top-nav {
+        padding: 20px 0 0 0; /* Removed the 40px left padding */
+        text-align: center;
+        width: 100%;
+    }
+
+    /* 2. Standardize row padding for mobile */
+    .hero-row, .detail-row {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 30px;
+        padding: 40px 20px; /* Reduced side padding from 40px to 20px */
+        width: 100%;
+    }
+
+    /* 3. Scale down the massive title for small screens */
+    .model-title { 
+        font-size: 2.2rem; /* Adjusted from 3rem for better mobile fit */
+        margin-top: 10px;
+    }
+
+    /* 4. Center the buttons on mobile */
+    .btn-primary-black {
+        width: 100%;
+        max-width: 300px;
+        padding: 15px 30px;
+    }
+
+    /* 5. Ensure images fill the width properly */
+    .hero-image-frame, .img-frame {
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    .features-grid { 
+        column-count: 1; 
+    }
+}
