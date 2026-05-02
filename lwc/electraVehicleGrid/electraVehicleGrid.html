@@ -1,0 +1,31 @@
+<template>
+    <div class="main-container">
+        <div class="vehicle-grid">
+            <template for:each={vehicles} for:item="car">
+                <div key={car.contentKey} class="car-card">
+                    
+                    <div class="image-area">
+                        <template if:true={car.imageUrl}>
+                            <img src={car.imageUrl} alt={car.title} />
+                        </template>
+                    </div>
+
+                    <div class="text-area">
+                        <h2 class="car-title">{car.title}</h2>
+                        <p class="car-price">{car.price}</p>
+                        
+                        <div class="car-tagline">
+                            <lightning-formatted-rich-text value={car.tagline}>
+                            </lightning-formatted-rich-text>
+                        </div>
+
+                        <div class="cta-area">
+                            <button class="btn-explore" onclick={handleExplore} data-id={car.contentKey}>Explore</button>
+                            <a href="javascript:void(0);" class="btn-testdrive" onclick={handleBookTestDrive} data-id={car.contentKey}>Book a Test Drive &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+</template>
