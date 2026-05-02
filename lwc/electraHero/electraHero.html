@@ -1,0 +1,37 @@
+<template>
+    <section class="hero-container">
+        <template if:true={isVideo}>
+            <video
+                class="hero-media"
+                autoplay
+                muted
+                loop
+                playsinline
+                src={resolvedMediaUrl}
+                poster={resolvedFallback}>
+            </video>
+        </template>
+
+        <template if:false={isVideo}>
+            <img src={resolvedMediaUrl} alt="Hero Media" class="hero-media" />
+        </template>
+
+        <div class="overlay"></div>
+
+        <div class="hero-content">
+            <h1 class="brand">ELECTRA CARS</h1>
+            <p class="tagline">Exquisite electric mastery, redefined.</p>
+
+            <div class="cta-group">
+                <button class="primary" onclick={handlePrimaryCTA}>
+                    Explore Vehicles
+                </button>
+                <template if:true={showSecondaryCta}>
+                    <button class="secondary" onclick={handleSecondaryCTA}>
+                        Book a Test Drive
+                    </button>
+                </template>
+            </div>
+        </div>
+    </section>
+</template>
