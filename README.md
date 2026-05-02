@@ -17,6 +17,7 @@
 - [Agentforce Agents and Actions](#agentforce-agents-and-actions)
 - [Salesforce Scheduler Setup](#salesforce-scheduler-setup)
 - [Key Apex Classes](#key-apex-classes)
+- [Flows](#flows)
 - [Salesforce Features Used](#salesforce-features-used)
 - [Demo](#demo)
 
@@ -124,7 +125,7 @@ Customer on Experience Cloud Website
 | **Automotive Cloud** | Vehicle__c standard object and TestDrive__c custom object |
 | **Slack** | Real-time appointment notification to dealership channel |
 | **Twilio - WhatsApp** | Booking confirmation sent via Twilio WhatsApp API using a custom Apex class, including unique booking code, dealership details, calendar invite and Google Maps location. Inbound customer notifications also handled via custom Apex |
-| **Flow** | Appointment booking orchestration |
+| **Flow** | Appointment booking orchestration across 8 flows covering agent actions, record triggers and Slack notifications |
 
 ---
 
@@ -338,3 +339,20 @@ Key design decisions:
 - Phone verification runs before any DML to ensure a customer can only cancel or reschedule their own booking
 - A `dmlPerformed` flag tracks whether a database update has occurred and switches the WhatsApp callout to an `@future` method to avoid the Salesforce callout-after-DML governor limit error
 - Returns empty TwiML 200 OK response to Twilio after every inbound message
+
+---
+
+## 🔄 Flows
+
+The solution uses 8 Flows across different trigger types and purposes.
+
+| Flow | Type | Trigger | Purpose |
+|---|---|---|---|
+| Route to ElectraCars Agent from Exp Cloud | Routing Flow | Messaging Session | Routes incoming website chat sessions to the ElectraCars Agentforce agent. Gets vehicle name from context and updates the Messaging Session before routing |
+| Get Vehicle Names and Store | Autolaunched Flow | Agent Action | Queries all Asset records, retrieves vehicle names and stores them as output for the agent to present to the customer |
+| Test Drive Appointment Details | Autolaunched Flow | Agent Action | Creates the Lead record using customer name and address details captured during the conversation |
+| Service Appointment Creation | Autolaunched Flow | Agent Action | Validates phone number format, creates the ServiceAppointment record, assigns the ServiceResource, updates the Lead record with appointment details and fetches the ServiceTerritory address |
+| Create Test Drive Record | Autolaunched Flow | Record After Save on ServiceAppointment | Triggered automatically when a ServiceAppointment is created or updated. Creates a new TestDrive__c record on creation and keeps it in sync on subsequent updates |
+| Booking Confirmation to Dealership | Autolaunched Flow | Record After Save on ServiceAppointment | Triggered when a ServiceAppointment is created. Looks up the linked TestDrive__c record and sends a Slack notification to the correct dealership channel based on territory |
+| Booking Cancellation to Dealership | Autolaunched Flow | Record After Save on ServiceAppointment | Triggered when a ServiceAppointment is cancelled. Checks whether cancellation was initiated by the customer via WhatsApp or the dealer, sends a Slack notification to the dealership and sends a WhatsApp cancellation confirmation to the customer via TwilioWhatsAppService |
+| Update ServiceAppointment Status | Autolaunched Flow | Agent Action | Used by the Dealership Service Agent via Slack. Finds the ServiceAppointment by ID, validates the status value and updates it to Cancelled, Cannot Complete or Completed. Returns a confirmation or error message back to the dealer |
