@@ -11,10 +11,10 @@
 - [Architecture](#architecture)
 - [Technology Stack](#technology-stack)
 - [Solution Walkthrough](#solution-walkthrough)
-  - [Layer 1 - Website, Data Cloud and Personalization](#layer-1--website-data-cloud-and-personalization)
-  - [Layer 2 - Agentforce Conversational Booking](#layer-2--agentforce-conversational-booking)
+  - [Layer 1 - Website, Data Cloud and Personalization](#layer-1---website-data-cloud-and-personalization)
+  - [Layer 2 - Agentforce Conversational Booking](#layer-2---agentforce-conversational-booking)
 - [Data Model](#data-model)
-- [Agentforce Agent Actions](#agentforce-agent-actions)
+- [Agentforce Agents and Actions](#agentforce-agents-and-actions)
 - [Salesforce Scheduler Setup](#salesforce-scheduler-setup)
 - [Key Apex Classes](#key-apex-classes)
 - [Salesforce Features Used](#salesforce-features-used)
@@ -264,8 +264,8 @@ This is a separate internal agent built for dealership staff. It is connected to
 - Type: Normal
 
 ### Service Territories
-- 5 parent territories at city level for Mumbai, Pune, Kolkata, kanpur and Delhi
-- 3 child territories, with geocoded lat/lon addresses
+- 5 parent territories at city level for Mumbai, Pune, Kolkata, Kanpur and Delhi
+- 3 child territories with geocoded lat/lon addresses
 - Geocoding enabled via Data Integration Rules for Geocodes on Service Territory Address
 
 ### Work Type
@@ -286,43 +286,46 @@ This is a separate internal agent built for dealership staff. It is connected to
 
 ### AF_GetDealerSlotsInvocable
 
-This class computes real-time test drive slot availability without any dependency on LxScheduler or FSL licenses, making it fully compatible with the Einstein Agent Service user which cannot hold a Salesforce Scheduler license.
+Computes real-time test drive slot availability without any dependency on LxScheduler or FSL licenses, making it fully compatible with the Einstein Agent Service user which cannot hold a Salesforce Scheduler license.
 
 How it works:
 1. Fetches WorkType duration
 2. Finds the primary active sales rep for the territory via ServiceTerritoryMember
 3. Retrieves OperatingHoursId from ServiceTerritory
-4. Loads all TimeSlot records and supports multiple shifts per day
+4. Loads all TimeSlot records and supports multiple shifts per day (e.g. 9AM-1PM and 3PM-6PM)
 5. Queries existing ServiceAppointment records to identify booked slots
 6. Queries ResourceAbsence records to block rep unavailability
 7. Loops through each day in the search window and generates available slots respecting all constraints
 8. Returns a structured list of SlotOption objects with displayTime, slotDate and slotTime
 
-Note: The Einstein Agent Service user cannot hold a Salesforce Scheduler license. This SOQL-based approach has zero license dependency and works with any user that has basic Read permissions on the relevant objects.
+Note: This SOQL-based approach has zero license dependency and works with any user that has basic Read permissions on the relevant objects.
+
+---
 
 ### AF_TerritoryRoutingInvocable
 
-This class resolves customer location and finds nearest dealerships:
-1. Accepts zip/pin code as input
-2. Looks up lat/lon from ZipCentroid__mdt custom metadata
-3. Runs SOQL DISTANCE() query on ServiceTerritory to find nearest dealerships within configured radius
-4. Returns ordered list of dealerships by distance
+Resolves customer location via IP address to lat/lon coordinates and finds the nearest Electra dealerships using SOQL DISTANCE() on ServiceTerritory. Returns an ordered list of dealerships within the configured radius (5 to 50 km).
+
+---
 
 ### AF_GetWeatherInsights
 
-This class fetches weather information for the selected test drive date and location, giving the customer a heads up on what conditions to expect on the day of their test drive. The weather data is surfaced conversationally by the agent before the customer confirms their slot.
+Fetches weather information for the selected test drive date and dealership location. The weather data is surfaced conversationally by the agent after showing available slots, giving the customer useful context before they confirm their booking.
+
+---
 
 ### TwilioWhatsAppService
 
-This class handles all WhatsApp communication via the Twilio WhatsApp API. It sends the outbound booking confirmation to the customer after slot confirmation, including the unique booking code, dealership address, calendar invite and Google Maps link. It also handles inbound customer messages for any follow-up notifications.
+Handles all outbound WhatsApp communication via the Twilio WhatsApp API. Sends the booking confirmation to the customer after slot confirmation, including the unique booking code, dealership address, calendar invite and Google Maps link.
 
+---
 
 ### TwilioInboundWebhook
- 
+
 A REST API endpoint (`@RestResource urlMapping='/twilio/inbound'`) that handles all inbound WhatsApp messages from customers via Twilio. It acts as a self-service post-booking support handler.
- 
+
 Supported customer intents:
- 
+
 | Customer Message | What Happens |
 |---|---|
 | CANCEL followed by Booking ID | Verifies phone number against ServiceAppointment, cancels the appointment and sends a WhatsApp confirmation |
@@ -330,9 +333,8 @@ Supported customer intents:
 | Yes / Yeah / Sure / OK | Sends a rebook link directing the customer back to the Electra Cars website |
 | No / Nope / Not now | Sends a friendly closing message |
 | Any other message | Sends a help menu showing CANCEL and RESCHEDULE instructions |
- 
+
 Key design decisions:
 - Phone verification runs before any DML to ensure a customer can only cancel or reschedule their own booking
-- A `dmlPerformed` flag tracks whether a database update has occurred, and switches the WhatsApp callout to an `@future` method to avoid the Salesforce callout-after-DML governor limit error
+- A `dmlPerformed` flag tracks whether a database update has occurred and switches the WhatsApp callout to an `@future` method to avoid the Salesforce callout-after-DML governor limit error
 - Returns empty TwiML 200 OK response to Twilio after every inbound message
-
