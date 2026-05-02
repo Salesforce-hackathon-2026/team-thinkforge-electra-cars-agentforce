@@ -1,0 +1,12 @@
+<template>
+    <div class="renderer-container">
+        <p class="header-text">{data.headerText}</p>
+        <div class="button-grid">
+            <template for:each={data.modelNames} for:item="model">
+                <button key={model} class="electra-orange-btn" onclick={handleSelection}>
+                    {model}
+                </button>
+            </template>
+        </div>
+    </div>
+</template>
