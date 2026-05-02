@@ -1,0 +1,124 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+.main-container {
+    padding: 60px 20px;
+}
+
+.vehicle-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 Columns */
+    gap: 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.car-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    text-align: left;
+}
+
+.image-area {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #f4f4f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.image-area img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+/* NEW: Image Zoom on Card Hover */
+.car-card:hover .image-area img {
+    transform: scale(1.1);
+}
+
+.text-area {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Pushes button area to bottom */
+}
+
+.car-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.car-price {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 12px;
+}
+
+.car-tagline {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #333;
+    margin-bottom: 25px;
+    min-height: 3.2em; /* Ensures button alignment */
+}
+
+.cta-area {
+    margin-top: auto; /* Pushes buttons to bottom */
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-explore {
+    background: #000;
+    color: #fff;
+    padding: 12px 0;
+    width: 160px;
+    border: 1px solid #000; /* Added subtle border for transition stability */
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    /* NEW: Smooth transition for hover */
+    transition: all 0.3s ease;
+}
+
+/* NEW: Explore Button Hover */
+.btn-explore:hover {
+    background: #444; /* Premium dark gray */
+    color: #fff;
+    transform: translateY(-2px); /* Subtle lift */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.btn-testdrive {
+    text-decoration: none;
+    color: #000;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block; /* Required for transform to work */
+    /* NEW: Smooth transition for movement */
+    transition: all 0.3s ease;
+}
+
+/* NEW: Test Drive Link Hover */
+.btn-testdrive:hover {
+    color: #666;
+    transform: translateX(5px); /* Moves the whole link slightly to the right */
+}
+
+/* Responsive Stacking */
+@media (max-width: 768px) {
+    .vehicle-grid { grid-template-columns: 1fr; }
+}
