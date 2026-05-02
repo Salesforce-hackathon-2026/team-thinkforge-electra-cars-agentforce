@@ -1,0 +1,55 @@
+.picker-box {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.date-scroller {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding-bottom: 10px;
+    scrollbar-width: none; /* Hide scrollbar for clean look */
+}
+
+.day-btn {
+    flex: 0 0 60px;
+    text-align: center;
+    padding: 10px 5px;
+    border-radius: 10px;
+    border: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.day-btn.active {
+    background: #FF8C00; /* Electra Orange */
+    border-color: #FF8C00;
+    color: white;
+}
+
+.day-label { font-size: 0.65rem; display: block; opacity: 0.8; }
+.day-number { font-size: 1.1rem; font-weight: 800; }
+
+.section-title { font-size: 0.75rem; font-weight: 700; color: #666; margin-bottom: 8px; text-transform: uppercase; }
+
+.chips-container { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.time-chip {
+    background: #fdfdfd;
+    border: 2px solid #FF8C00;
+    color: #FF8C00;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.time-chip:hover {
+    background: #FF8C00;
+    color: white;
+}
