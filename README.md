@@ -18,6 +18,8 @@
 - [Salesforce Scheduler Setup](#salesforce-scheduler-setup)
 - [Key Apex Classes](#key-apex-classes)
 - [Flows](#flows)
+- [External Integrations](#external-integrations)
+- [Potential Improvements](#potential-improvements)
 - [Salesforce Features Used](#salesforce-features-used)
 - [Demo](#demo)
 
@@ -356,3 +358,36 @@ The solution uses 8 Flows across different trigger types and purposes.
 | Booking Confirmation to Dealership | Autolaunched Flow | Record After Save on ServiceAppointment | Triggered when a ServiceAppointment is created. Looks up the linked TestDrive__c record and sends a Slack notification to the correct dealership channel based on territory |
 | Booking Cancellation to Dealership | Autolaunched Flow | Record After Save on ServiceAppointment | Triggered when a ServiceAppointment is cancelled. Checks whether cancellation was initiated by the customer via WhatsApp or the dealer, sends a Slack notification to the dealership and sends a WhatsApp cancellation confirmation to the customer via TwilioWhatsAppService |
 | Update ServiceAppointment Status | Autolaunched Flow | Agent Action | Used by the Dealership Service Agent via Slack. Finds the ServiceAppointment by ID, validates the status value and updates it to Cancelled, Cannot Complete or Completed. Returns a confirmation or error message back to the dealer |
+
+---
+
+## 🔗 External Integrations
+
+### Twilio Inbound Webhook
+
+This endpoint is registered in Twilio as the inbound webhook URL. When a customer sends a WhatsApp message to cancel or reschedule their booking, Twilio posts the message payload to this URL. The TwilioInboundWebhook Apex class processes the message, verifies the customer's phone number, updates the ServiceAppointment status to Cancelled and syncs the change to the linked TestDrive__c record automatically.
+
+```
+https://orgfarm-543580c7c8.my.salesforce-sites.com/twiliowebhook/services/apexrest/twilio/inbound
+```
+
+### Open-Meteo Weather API
+
+This free weather forecast API is called by the AF_GetWeatherInsights Apex class. It returns weather forecast data for the selected test drive date and dealership location, which the agent surfaces conversationally to help the customer make an informed decision before confirming their slot.
+
+```
+https://api.open-meteo.com/v1/forecast
+```
+
+---
+
+## 🚀 Potential Improvements
+
+- Leveraging Agentforce Voice for booking test drives with a natural phonic conversation
+- WhatsApp channel alignment directly from Salesforce without depending on third-party applications such as Twilio
+- Creating an Electra Cars WhatsApp Business channel tied to Agentforce so that existing customers can use WhatsApp to request any kind of service
+- Implementing a login feature for customers so they have their own profile including saved preferences and cart
+- Implementing a "build your own car" experience with a cart, and triggering abandoned cart notifications through Salesforce Personalization
+- When a lead is converted to a contact post-purchase, tying the unified Data Cloud profile to the web behaviours captured during the lead stage for a richer ownership experience
+- Improvements to the Dealership Service Agent to handle full booking management capabilities including staff onboarding and offboarding
+- Leveraging the full-fledged Automotive Cloud core data model for a production-grade implementation
