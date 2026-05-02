@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Send_Message_to_Slack_channel_for_Kolkata</name>
+        <label>Send Message to Slack channel for Kolkata</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <actionName>SendMessageToSlackChannel</actionName>
+        <actionType>slackFlow</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>channelId</name>
+            <value>
+                <stringValue>C0B12HYPFU1</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>message</name>
+            <value>
+                <elementReference>Slack_TestDrive_Message</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>SendMessageToSlackChannel</nameSegment>
+        <offset>0</offset>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </actionCalls>
+    <actionCalls>
+        <name>Send_Message_to_Slack_channel_for_Mumbai</name>
+        <label>Send Message to Slack channel for Mumbai</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <actionName>SendMessageToSlackChannel</actionName>
+        <actionType>slackFlow</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>channelId</name>
+            <value>
+                <stringValue>C0B0H9QAT0T</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>message</name>
+            <value>
+                <elementReference>Slack_TestDrive_Message</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>SendMessageToSlackChannel</nameSegment>
+        <offset>0</offset>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </actionCalls>
+    <apiVersion>66.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <decisions>
+        <name>Checkpoint_on_Territory_Name</name>
+        <label>Checkpoint on Territory Name</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Kolkata_Territory</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.ServiceTerritory.Name</leftValueReference>
+                <operator>Contains</operator>
+                <rightValue>
+                    <stringValue>kolkata</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Send_Message_to_Slack_channel_for_Kolkata</targetReference>
+            </connector>
+            <label>Kolkata Territory</label>
+        </rules>
+        <rules>
+            <name>Mumbai_Territory</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.ServiceTerritory.Name</leftValueReference>
+                <operator>Contains</operator>
+                <rightValue>
+                    <stringValue>mumbai</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Send_Message_to_Slack_channel_for_Mumbai</targetReference>
+            </connector>
+            <label>Mumbai Territory</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <interviewLabel>Booking Confirmation to Dealership {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Booking Confirmation to Dealership</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <name>Get_Test_Drive_Record_ID_based_on_Service_Appointment_ID</name>
+        <label>Get Test Drive Record ID based on Service Appointment ID</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Checkpoint_on_Territory_Name</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Service_Appointment_Id__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>Test_Drive__c</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <object>ServiceAppointment</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <scheduledPaths>
+            <connector>
+                <targetReference>Get_Test_Drive_Record_ID_based_on_Service_Appointment_ID</targetReference>
+            </connector>
+            <pathType>AsyncAfterCommit</pathType>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <textTemplates>
+        <name>Slack_TestDrive_Message</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>🚗 *New Test Drive Booked*
+Vehicle Name: {!$Record.Vehicle_Asset_ID__r.Name}
+Service Booking Appointment ID: {!$Record.Id}
+Retailer Name: {!$Record.ServiceTerritory.Name}
+Customer Name: {!Get_Test_Drive_Record_ID_based_on_Service_Appointment_ID.ParentRecord__r.FirstName} {!Get_Test_Drive_Record_ID_based_on_Service_Appointment_ID.ParentRecord__r.LastName}
+
+Please review and take action. Thank you!</text>
+    </textTemplates>
+    <variables>
+        <name>fetched_Test_Drive_Id</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+</Flow>
