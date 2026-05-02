@@ -1,0 +1,29 @@
+<template>
+    <div class="picker-box slds-m-top_small animate-in">
+        <div class="date-scroller">
+            <template for:each={days} for:item="day">
+                <div key={day.date} 
+                     class={day.computedClass} 
+                     onclick={handleDayClick} 
+                     data-date={day.date}>
+                    <span class="day-label">{day.weekday}</span>
+                    <span class="day-number">{day.dayNum}</span>
+                </div>
+            </template>
+        </div>
+
+        <div class="time-grid slds-m-top_medium">
+            <p class="section-title">Available Times</p>
+            <div class="chips-container">
+                <template for:each={activeSlots} for:item="slot">
+                    <button key={slot.time} 
+                            class="time-chip" 
+                            onclick={handleSlotClick} 
+                            data-val={slot.fullValue}>
+                        {slot.time}
+                    </button>
+                </template>
+            </div>
+        </div>
+    </div>
+</template>
