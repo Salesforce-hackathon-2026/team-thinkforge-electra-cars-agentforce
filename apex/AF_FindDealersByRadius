@@ -1,0 +1,176 @@
+public with sharing class AF_FindDealersByRadius {
+
+    public class Request {
+        @InvocableVariable(required=true)
+        public Id leadId;
+
+        @InvocableVariable
+        public String postalCode;
+
+        @InvocableVariable
+        public Integer maxResults; // default 3
+
+        @InvocableVariable(required=true)
+        // Exact radius to search within.
+        // Agent passes whatever the customer specifies.
+        // Examples: 25, 50, 100, 150, 200
+        public Integer searchRadiusKm;
+    }
+
+    public class DealerOption {
+        @InvocableVariable public Id territoryId;
+        @InvocableVariable public String territoryName;
+        @InvocableVariable public Decimal distanceKm;
+    }
+
+    public class Response {
+        @InvocableVariable public Boolean found;
+        @InvocableVariable public Integer searchedRadiusKm;
+        @InvocableVariable public Id bestTerritoryId;
+        @InvocableVariable public String bestTerritoryName;
+        @InvocableVariable public Decimal bestDistanceKm;
+        @InvocableVariable public List<DealerOption> options;
+        @InvocableVariable public String errorMessage;
+        @InvocableVariable public String status; // SUCCESS | PENDING_GEOCODE | NOT_FOUND | ERROR
+    }
+
+    private static void busyWait(Integer milliseconds) {
+        Long target = System.currentTimeMillis() + milliseconds;
+        while (System.currentTimeMillis() < target) {}
+    }
+
+    private static Boolean hasCpuBudget(Integer waitMs) {
+        return (Limits.getLimitCpuTime() - Limits.getCpuTime()) > (waitMs + 2000);
+    }
+
+    @InvocableMethod(label='Find Dealers Within Exact Radius')
+    public static List<Response> findDealers(List<Request> requests) {
+        List<Response> results = new List<Response>();
+
+        for (Request req : requests) {
+            Response res = new Response();
+            res.options = new List<DealerOption>();
+
+            try {
+                // ── Validate inputs ──────────────────────────────────────────
+                Integer limitSize = (req.maxResults == null || req.maxResults <= 0)
+                    ? 3 : req.maxResults;
+
+                // Default 50km if agent doesn't pass a value
+                // Cap at 200km to prevent country-wide searches
+                Integer radius = (req.searchRadiusKm == null || req.searchRadiusKm <= 0)
+                    ? 50 : req.searchRadiusKm;
+                if (radius > 200) { radius = 200; }
+
+                res.searchedRadiusKm = radius;
+
+                // ── Query Lead ───────────────────────────────────────────────
+                Lead l = [
+                    SELECT Id, PostalCode, Latitude, Longitude
+                    FROM Lead
+                    WHERE Id = :req.leadId
+                    LIMIT 1
+                ];
+
+                String zip = (req.postalCode != null && req.postalCode.trim().length() > 0)
+                    ? req.postalCode.trim()
+                    : l.PostalCode;
+
+                if (zip == null && l.Latitude == null) {
+                    res.found        = false;
+                    res.status       = 'ERROR';
+                    res.errorMessage = 'Lead has no PostalCode and no postalCode was provided.';
+                    results.add(res);
+                    continue;
+                }
+
+                Decimal lat = l.Latitude;
+                Decimal lon = l.Longitude;
+
+                // ── Geocode retry loop ───────────────────────────────────────
+                final Integer WAIT_MS   = 500;
+                final Integer MAX_RETRY = 5;
+                Integer retryCount = 0;
+
+                while ((lat == null || lon == null)
+                        && retryCount < MAX_RETRY
+                        && hasCpuBudget(WAIT_MS)) {
+
+                    busyWait(WAIT_MS);
+                    retryCount++;
+
+                    l = [
+                        SELECT Id, Latitude, Longitude
+                        FROM Lead
+                        WHERE Id = :req.leadId
+                        LIMIT 1
+                    ];
+
+                    lat = l.Latitude;
+                    lon = l.Longitude;
+                }
+
+                if (lat == null || lon == null) {
+                    res.found        = false;
+                    res.status       = 'PENDING_GEOCODE';
+                    res.errorMessage = 'Geocoding did not complete after '
+                        + retryCount + ' retries ('
+                        + (retryCount * WAIT_MS) + 'ms). Please retry.';
+                    results.add(res);
+                    continue;
+                }
+
+                // ── Single radius search — no expansion ──────────────────────
+                // Searches ONLY within the exact radius the customer specified.
+                // If nothing found, agent tells customer and can ask if they
+                // want to try a larger radius (by calling this action again).
+                Decimal radiusDec = Decimal.valueOf(radius);
+
+                List<ServiceTerritory> sts = [
+                    SELECT Id, Name,
+                           DISTANCE(Address, GEOLOCATION(:lat, :lon), 'km') distKm
+                    FROM ServiceTerritory
+                    WHERE IsActive = true
+                      AND DISTANCE(Address, GEOLOCATION(:lat, :lon), 'km') < :radiusDec
+                    ORDER BY DISTANCE(Address, GEOLOCATION(:lat, :lon), 'km')
+                    LIMIT :limitSize
+                ];
+
+                // ── No dealers found within requested radius ──────────────────
+                if (sts.isEmpty()) {
+                    res.found        = false;
+                    res.status       = 'NOT_FOUND';
+                    res.errorMessage = 'No dealership found within '
+                        + radius + ' km of your location.';
+                    results.add(res);
+                    continue;
+                }
+
+                // ── Build response ───────────────────────────────────────────
+                res.found  = true;
+                res.status = 'SUCCESS';
+
+                for (ServiceTerritory st : sts) {
+                    DealerOption opt = new DealerOption();
+                    opt.territoryId   = st.Id;
+                    opt.territoryName = st.Name;
+                    opt.distanceKm    = (Decimal) st.get('distKm');
+                    res.options.add(opt);
+                }
+
+                res.bestTerritoryId   = res.options[0].territoryId;
+                res.bestTerritoryName = res.options[0].territoryName;
+                res.bestDistanceKm    = res.options[0].distanceKm;
+
+            } catch (Exception e) {
+                res.found        = false;
+                res.status       = 'ERROR';
+                res.errorMessage = e.getMessage();
+            }
+
+            results.add(res);
+        }
+
+        return results;
+    }
+}
