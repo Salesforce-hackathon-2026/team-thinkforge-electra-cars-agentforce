@@ -36,7 +36,7 @@ The solution is majorly website-facing where the test drive booking experience l
 
 The moment a customer lands on the Electra Cars website, the experience begins working for them. After 30 seconds on the homepage, a personalized AI nudge appears, a friendly message card from the Electra Test Drive Advisor inviting them to book a test drive. The message, tone and call-to-action are fully controlled by Salesforce Personalization, so the right message always reaches the right visitor at the right time.
 
-When the customer is ready, they simply start a conversation with the Electra AI Agent using the Book A Test Drive button from the homepage or from the vehicle explore page. The agent surfaces the vehicles they are interested in, captures basic details, and auto-detects their location using IP address to instantly surface the nearest Electra dealerships. Once the dealership is confirmed, the agent shows real-time available time slots. The customer selects a convenient slot and the agent collects their phone number for WhatsApp confirmation and email (optional), all through a natural back-and-forth conversation, no forms, no waiting.
+When the customer is ready, they simply click Book A Test Drive and land on the Agentforce agent page. The customer says Hi and the conversation begins. The agent auto captures the vehicle they are interested in from context, then asks for their name. The agent then auto-detects their location using IP address to instantly surface the nearest Electra dealerships. Once the dealership is confirmed, the agent shows real-time available time slots along with weather insights for the test drive date. The customer selects a convenient slot and the agent collects their phone number for WhatsApp confirmation and email (optional), all through a natural back-and-forth conversation, no forms, no waiting.
 
 Once confirmed, the booking is locked in automatically. The dealership gets the appointment notification in their Slack channel, the customer's details are captured as a lead in Salesforce, and a confirmation with a unique booking code, dealership details, calendar invite and dealership Google Maps location is sent to the customer instantly on WhatsApp.
 
@@ -69,22 +69,35 @@ Customer on Experience Cloud Website
 |  -> Content controlled via Decisions    |
 +-----------------------------------------+
          |
-         v  Customer clicks Chat with Electra
+         v  Customer clicks Book A Test Drive
 +-----------------------------------------+
 |  Layer 2 - Agentforce Booking           |
 |                                         |
-|  Agent asks vehicle interest            |
+|  Customer lands on Agent page           |
 |         |                               |
-|  Agent captures name and phone          |
+|  Customer says Hi                       |
+|         |                               |
+|  Agent auto captures vehicle interest   |
+|  from context                           |
+|         |                               |
+|  Agent asks for customer name           |
 |         |                               |
 |  IP -> lat/lon -> DISTANCE() SOQL       |
-|  -> Nearest ServiceTerritories          |
+|  -> Auto detects nearest dealerships    |
+|         |                               |
+|  Customer confirms dealership           |
 |         |                               |
 |  AF_GetDealerSlotsInvocable             |
 |  -> WorkType + TimeSlot + SA query      |
 |  -> Available slots returned            |
 |         |                               |
-|  Customer picks slot                    |
+|  Agent shows weather insights           |
+|  for selected slot date                 |
+|         |                               |
+|  Customer confirms time slot            |
+|         |                               |
+|  Agent asks for phone number            |
+|  Email collected (optional)             |
 |         |                               |
 |  ServiceAppointment created             |
 |  Lead upserted                          |
@@ -106,11 +119,11 @@ Customer on Experience Cloud Website
 | **Data Cloud** | Website data ingestion via Websites and Mobile Apps connector, Data Streams, Data Model mapping (Individual, Website Engagement, Privacy Consent Log) and Identity Resolution |
 | **Salesforce Personalization** | Personalization Points, Response Templates, Decisions powering the 30-second nudge and exit intent overlay |
 | **Agentforce** | Conversational AI agent handling the full test drive booking flow |
-| **Apex (@InvocableMethod)** | Custom Agent Actions for geo-based dealer lookup and real-time slot retrieval |
+| **Apex (@InvocableMethod)** | Custom Agent Actions for geo-based dealer lookup, real-time slot retrieval, weather insights and WhatsApp notifications via Twilio |
 | **Salesforce Scheduler** | WorkType, ServiceTerritory, TimeSlot, ServiceAppointment and ResourceAbsence objects |
 | **Automotive Cloud** | Vehicle__c standard object and TestDrive__c custom object |
 | **Slack** | Real-time appointment notification to dealership channel |
-| **Digital Engagement - WhatsApp** | Booking confirmation with unique code, dealership details, calendar invite and Google Maps location |
+| **Twilio - WhatsApp** | Booking confirmation sent via Twilio WhatsApp API using a custom Apex class, including unique booking code, dealership details, calendar invite and Google Maps location. Inbound customer notifications also handled via custom Apex |
 | **Flow** | Appointment booking orchestration |
 
 ---
@@ -133,7 +146,6 @@ These streams are mapped to the Data Cloud standard data model. Behavioural even
 |---|---|
 | ElectraCarsWeb-Behavioral Events | Captures page views, clicks and interactions across the website |
 | ElectraCarsWeb-identity | Captures identity signals including cookie ID and known user identity |
-| CurrencyType_Home | CRM reference data ingestion |
 
 | Data Model Mapping | Type | Purpose |
 |---|---|---|
@@ -166,23 +178,26 @@ In future, this behavioural data can be tied to a unified customer profile post-
 
 ### Layer 2 - Agentforce Conversational Booking
 
-When the customer clicks Book A Test Drive or Chat with Electra from the homepage, the AI nudge, the exit intent overlay or the vehicle explore page, the Agentforce conversation begins.
+When the customer clicks Book A Test Drive from the homepage, the AI nudge or the exit intent overlay, the Agentforce conversation begins.
 
 | Step | What Happens |
 |---|---|
-| 1 | Agent greets the customer and asks which vehicle they are interested in |
-| 2 | Agent captures customer name and phone number |
-| 3 | Agent auto-detects customer location via IP address and resolves to lat/lon |
-| 4 | Apex action runs SOQL DISTANCE() on ServiceTerritory and returns nearest Electra dealerships |
-| 5 | Customer confirms preferred dealership |
-| 6 | Apex action queries WorkType, TimeSlot, ServiceAppointment and ResourceAbsence and returns real-time available slots |
-| 7 | Customer selects a convenient slot |
-| 8 | Agent optionally collects email address |
-| 9 | ServiceAppointment created in Salesforce Scheduler |
-| 10 | Lead upserted with customer details and vehicle interest |
-| 11 | TestDrive__c record created linking all entities with a unique confirmation code |
-| 12 | Slack notification sent to dealership channel |
-| 13 | WhatsApp confirmation sent to customer with booking code, dealership details, calendar invite and Google Maps location |
+| 1 | Customer clicks Book A Test Drive from the homepage or vehicle explore page |
+| 2 | Customer lands on the Agentforce agent page |
+| 3 | Customer says Hi and the conversation begins |
+| 4 | Agent auto captures the vehicle the customer is interested in from context |
+| 5 | Agent asks for the customer name |
+| 6 | Agent auto-detects customer location via IP address, resolves to lat/lon and finds the nearest Electra dealerships |
+| 7 | Customer confirms their preferred dealership |
+| 8 | Agent fetches real-time available time slots for the confirmed dealership |
+| 9 | Agent shows weather insights for the dates of available slots |
+| 10 | Customer confirms their preferred time slot |
+| 11 | Agent asks for the customer phone number and optionally collects email address |
+| 12 | ServiceAppointment created in Salesforce Scheduler |
+| 13 | Lead upserted with customer details and vehicle interest |
+| 14 | TestDrive__c record created linking all entities with a unique confirmation code |
+| 15 | WhatsApp confirmation sent to customer with booking code, dealership details, calendar invite and Google Maps location |
+| 16 | Slack notification sent to the dealership channel |
 
 ---
 
@@ -194,7 +209,7 @@ When the customer clicks Book A Test Drive or Chat with Electra from the homepag
 |---|---|
 | `Lead` | Customer details including name, phone, email, zip, vehicle interest and preferred channel |
 | `Account` | Dealerships with Record Type as Dealer, DealerCode__c and ServiceRadius_km__c |
-| `Vehicle__c` | Automotive Cloud standard object for vehicle models and trims |
+| `Asset` | Automotive Cloud standard object for vehicle models and trims |
 | `Contact` | Post-conversion from Lead after booking confirmation |
 | `ServiceTerritory` | One per dealership with geocoded lat/lon and linked operating hours |
 | `ServiceResource` | Sales reps as Technician type and demo vehicles as Asset type |
@@ -202,45 +217,40 @@ When the customer clicks Book A Test Drive or Chat with Electra from the homepag
 | `WorkType` | Defines the Test Drive appointment template with duration, buffer and hours |
 | `TimeSlot` | Defines working hours intervals within Operating Hours |
 | `ResourceAbsence` | Blocks slots when a rep is on leave or unavailable |
-| `MessagingSession` | Digital Engagement session for WhatsApp confirmation |
 
 ### Custom Objects Built
 
 | Object | Purpose |
 |---|---|
 | `TestDrive__c` | Central booking record linking Lead, Vehicle, Dealership, ServiceAppointment, ConfirmationCode and AgentSessionId |
-| `DealerZipMap__c` | Zip-to-dealer routing table with Priority and DistanceKm for multi-dealer zip coverage |
-
-### Custom Metadata
-
-| Metadata Type | Purpose |
-|---|---|
-| `ZipCentroid__mdt` | Stores lat/lon for key Indian pin codes used by geo-lookup Apex for zip-to-coordinate resolution |
-
-### Sample Data
-
-| Object | Records |
-|---|---|
-| Account (Dealerships) | 20 records across Mumbai (5), Pune (5), Kolkata (5) and Delhi (5) |
-| Vehicle__c | 10 records including Electra Sedan, Electra Convertible, Electra Elegance, Electra Sleek SUV and Electra Compact |
-| DealerZipMap__c | 41 zip-to-dealer mappings |
-| Lead | 5 records for Priya Sharma, Rahul Mehta, Sneha Kulkarni, Arjun Banerjee and Deepika Nair |
-| TestDrive__c | 5 records with statuses Confirmed x2, Pending, Completed and Cancelled |
 
 ---
 
-## ⚡ Agentforce Agent Actions
+## ⚡ Agentforce Agents and Actions
 
-| Action | Input | Output |
-|---|---|---|
-| `GetDealerByZip` | zipCode | dealershipId, dealerName, distance |
-| `GetVehicleByModel` | modelName | vehicleId, trim options |
-| `UpsertLead` | name, email, phone, zip | leadId |
-| `GetNearbyDealerSlots` | lat/lon or zip | dealer list with available slots |
-| `CreateTestDrive` | all FKs + datetime | confirmationCode |
-| `SendConfirmation` | testDriveId + channel | messageSent |
+### Agent 1 - ElectraCars Test Drive Booking Agent (Customer Facing)
 
-All actions are registered as Apex-based Agent Actions via Setup > Agent Actions > New > Apex using the @InvocableMethod annotation.
+This is the primary customer-facing agent embedded on the Electra Cars Experience Cloud website. It handles the full test drive booking journey from start to confirmation.
+
+| Agent Action | Purpose |
+|---|---|
+| Get Vehicle Name and Store | Fetches available Electra vehicle details and captures the vehicle the customer is interested in |
+| Find Nearest Dealership Territory (5 to 50 km) | Auto-detects customer location via IP, resolves to lat/lon and finds the nearest Electra dealerships using SOQL DISTANCE() on ServiceTerritory |
+| Get Available Test Drive Slots for Territory | Queries WorkType, TimeSlot, ServiceAppointment and ResourceAbsence to return real-time available slots for the confirmed dealership |
+| Get Weather for Dealer Territory | Fetches weather insights for the test drive date and dealership location so the customer knows what to expect on the day |
+| Test Drive Appointment Details | Creates the Lead record using customer name and address details provided during the conversation |
+| Service Appointment Creation | Creates the ServiceAppointment in Salesforce Scheduler once the customer confirms their slot |
+| Send WhatsApp Booking Confirmation | Sends the booking confirmation to the customer via Twilio WhatsApp API including booking code, dealership details, calendar invite and Google Maps location |
+
+---
+
+### Agent 2 - Dealership Service Agent (Dealer Facing)
+
+This is a separate internal agent built for dealership staff. It is connected to Slack and can be invoked directly from the dealership Slack channel, allowing staff to manage test drive bookings without logging into Salesforce.
+
+| Agent Action | Purpose |
+|---|---|
+| Update_ServiceAppointment_Status | Allows dealership staff to update the status of a Service Appointment, for example cancelling or completing a test drive booking, directly from Slack |
 
 ---
 
@@ -249,11 +259,13 @@ All actions are registered as Apex-based Agent Actions via Setup > Agent Actions
 ### Operating Hours
 - Record: Mon-Sat 9AM-6PM IST
 - Timezone: Asia/Kolkata
-- Time Slots: Monday to Saturday 09:00 to 18:00
+- Shift 1: Monday to Saturday 09:00 to 13:00
+- Shift 2: Monday to Saturday 15:00 to 18:00
+- Type: Normal
 
 ### Service Territories
-- 4 parent territories at city level for Mumbai, Pune, Kolkata and Delhi
-- 20 child territories, one per dealership, with geocoded lat/lon addresses
+- 5 parent territories at city level for Mumbai, Pune, Kolkata, kanpur and Delhi
+- 3 child territories, with geocoded lat/lon addresses
 - Geocoding enabled via Data Integration Rules for Geocodes on Service Territory Address
 
 ### Work Type
@@ -288,7 +300,7 @@ How it works:
 
 Note: The Einstein Agent Service user cannot hold a Salesforce Scheduler license. This SOQL-based approach has zero license dependency and works with any user that has basic Read permissions on the relevant objects.
 
-### AF_GetNearbyDealers
+### AF_TerritoryRoutingInvocable
 
 This class resolves customer location and finds nearest dealerships:
 1. Accepts zip/pin code as input
@@ -296,31 +308,31 @@ This class resolves customer location and finds nearest dealerships:
 3. Runs SOQL DISTANCE() query on ServiceTerritory to find nearest dealerships within configured radius
 4. Returns ordered list of dealerships by distance
 
----
+### AF_GetWeatherInsights
 
-## ✅ Salesforce Features Used
+This class fetches weather information for the selected test drive date and location, giving the customer a heads up on what conditions to expect on the day of their test drive. The weather data is surfaced conversationally by the agent before the customer confirms their slot.
 
-- [x] Agentforce
-- [x] Apex
-- [x] Flow
-- [x] Data Cloud (Data360)
-- [x] Slack
-- [x] API
-- [x] WhatsApp
+### TwilioWhatsAppService
 
----
+This class handles all WhatsApp communication via the Twilio WhatsApp API. It sends the outbound booking confirmation to the customer after slot confirmation, including the unique booking code, dealership address, calendar invite and Google Maps link. It also handles inbound customer messages for any follow-up notifications.
 
-## 🎬 Demo
 
-A full end-to-end demo video under 5 minutes is available at the link submitted with this hackathon entry.
+### TwilioInboundWebhook
+ 
+A REST API endpoint (`@RestResource urlMapping='/twilio/inbound'`) that handles all inbound WhatsApp messages from customers via Twilio. It acts as a self-service post-booking support handler.
+ 
+Supported customer intents:
+ 
+| Customer Message | What Happens |
+|---|---|
+| CANCEL followed by Booking ID | Verifies phone number against ServiceAppointment, cancels the appointment and sends a WhatsApp confirmation |
+| RESCHEDULE followed by Booking ID | Verifies phone number, shows current booking details and directs customer to the website to pick a new slot |
+| Yes / Yeah / Sure / OK | Sends a rebook link directing the customer back to the Electra Cars website |
+| No / Nope / Not now | Sends a friendly closing message |
+| Any other message | Sends a help menu showing CANCEL and RESCHEDULE instructions |
+ 
+Key design decisions:
+- Phone verification runs before any DML to ensure a customer can only cancel or reschedule their own booking
+- A `dmlPerformed` flag tracks whether a database update has occurred, and switches the WhatsApp callout to an `@future` method to avoid the Salesforce callout-after-DML governor limit error
+- Returns empty TwiML 200 OK response to Twilio after every inbound message
 
-The demo covers:
-1. Customer landing on the Electra Cars Experience Cloud website
-2. 30-second slide-in nudge appearing inviting to book a test drive
-3. Exit intent overlay firing with the message "Wait - before you go!"
-4. Customer starting a conversation with the Electra AI Agent
-5. Geo-based dealer discovery in action
-6. Real-time slot availability returned conversationally
-7. Booking confirmation with Slack notification to dealership and WhatsApp message to customer
-
----
