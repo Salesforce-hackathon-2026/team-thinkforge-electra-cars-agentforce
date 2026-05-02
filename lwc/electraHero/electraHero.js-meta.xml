@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>Electra Hero Banner</masterLabel>
+
+    <targets>
+        <target>lightningCommunity__Page</target>
+        <target>lightningCommunity__Default</target>
+    </targets>
+
+    <targetConfigs>
+        <targetConfig targets="lightningCommunity__Default">
+            <property
+                name="cmsMediaSource"
+                type="ContentReference"
+                label="Hero Media (CMS Asset)"
+                required="false" />
+            
+            <property
+                name="cmsFallbackPoster"
+                type="ContentReference"
+                label="Fallback Poster Image (CMS Asset)"
+                required="false" />
+
+            <property name="mediaUrl" type="String" label="(Deprecated) Old Media URL" />
+            <property name="fallbackImage" type="String" label="(Deprecated) Old Fallback URL" />
+
+            <property
+                name="mediaType"
+                type="String"
+                label="Media Type"
+                datasource="video,image"
+                default="video" />
+
+            <property
+                name="showSecondaryCta"
+                type="Boolean"
+                label="Show Book Test Drive CTA"
+                default="true" />
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>
