@@ -1,0 +1,68 @@
+<template>
+    <div class="showroom-container">
+        <template if:true={vehicle}>
+            
+            <nav class="top-nav content-limit">
+                <span onclick={navigateToHome} class="back-link" style="cursor: pointer;">
+                    ← BACK TO SHOWROOM
+                </span>
+            </nav>
+
+            <div class="hero-row">
+                <div class="hero-image-frame">
+                    <img src={vehicle.imageUrl} alt="Model Hero" class="zoom-img" />
+                </div>
+                <div class="hero-content">
+                    <h1 class="model-title">{vehicle.title}</h1>
+                    <p class="pricing-text">Starting {vehicle.price}*</p>
+                    <button class="btn-primary-black" onclick={handleBooking}>
+                        BOOK A TEST DRIVE
+                    </button>
+                </div>
+            </div>
+
+            <div class="full-width-section bg-gray">
+                <div class="content-limit">
+                    <h2 class="section-label">Key Features</h2>
+                    <div class="features-grid">
+                        <lightning-formatted-rich-text value={vehicle.features}>
+                        </lightning-formatted-rich-text>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-image">
+                    <div class="img-frame">
+                        <img src={vehicle.interiorImageUrl} alt="Interior View" class="zoom-img" />
+                    </div>
+                </div>
+                <div class="detail-text">
+                    <h2 class="section-label">Interior Craftsmanship</h2>
+                    <lightning-formatted-rich-text value={vehicle.interior}>
+                    </lightning-formatted-rich-text>
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-image">
+                    <div class="img-frame">
+                        <img src={vehicle.exteriorImageUrl} alt="Exterior View" class="zoom-img" />
+                    </div>
+                </div>
+                <div class="detail-text">
+                    <h2 class="section-label">Exterior Design</h2>
+                    <lightning-formatted-rich-text value={vehicle.exterior}>
+                    </lightning-formatted-rich-text>
+                </div>
+            </div>
+
+        </template>
+
+        <template if:true={error}>
+            <div class="error-banner">
+                <p>System Message: {error}</p>
+            </div>
+        </template>
+    </div>
+</template>
